@@ -19,11 +19,9 @@ namespace RustHomeAssistantBridge
             // Add Entity Framework
             builder.Services.AddDbContext<RustBridgeDbContext>(options =>
                 options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") 
-                    ?? "Data Source=rustbridge.db"));
-
-            // Configuration
-            builder.Services.Configure<RustPlusConfig>(builder.Configuration.GetSection("RustPlus"));
+                    ?? "Data Source=rustbridge.db"));            // Configuration
             builder.Services.Configure<HomeAssistantConfig>(builder.Configuration.GetSection("HomeAssistant"));
+            builder.Services.Configure<FcmConfig>(builder.Configuration.GetSection("Fcm"));
 
             // HTTP Client for Home Assistant
             builder.Services.AddHttpClient<HomeAssistantService>();

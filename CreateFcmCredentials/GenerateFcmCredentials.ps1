@@ -1,6 +1,9 @@
 # FCM Credentials Generator for Rust+ Home Assistant Bridge
 # This script uses @liamcottle/rustplus.js to generate FCM credentials
 
+# Change to the script directory
+Set-Location $PSScriptRoot
+
 Write-Host "Installing @liamcottle/rustplus.js..." -ForegroundColor Green
 npm install @liamcottle/rustplus.js
 

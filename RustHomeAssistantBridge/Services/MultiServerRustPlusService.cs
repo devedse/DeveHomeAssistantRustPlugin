@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using RustHomeAssistantBridge.Configuration;
 using RustHomeAssistantBridge.Data;
 using RustHomeAssistantBridge.Models;
 using RustPlusApi;
@@ -21,25 +23,41 @@ public class MultiServerRustPlusService
     private readonly ILogger<MultiServerRustPlusService> _logger;
     private readonly HomeAssistantService _homeAssistantService;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly FcmConfig _fcmConfig;
     private readonly ConcurrentDictionary<int, RustServerConnection> _connections = new();
     private readonly Timer _monitoringTimer;
+    private object? _fcmCredentials;
 
     public MultiServerRustPlusService(
         ILogger<MultiServerRustPlusService> logger,
         HomeAssistantService homeAssistantService,
-        IServiceScopeFactory scopeFactory)
+        IServiceScopeFactory scopeFactory,
+        IOptions<FcmConfig> fcmConfig)
     {
         _logger = logger;
         _homeAssistantService = homeAssistantService;
         _scopeFactory = scopeFactory;
+        _fcmConfig = fcmConfig.Value;
         
         // Timer to periodically check connections and update server info
         _monitoringTimer = new Timer(MonitorConnections, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
-    }
-
-    public async Task StartAsync(CancellationToken cancellationToken)
+    }    public async Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Starting Multi-Server Rust+ service...");
+
+        // Load FCM credentials if enabled
+        if (_fcmConfig.Enabled && !string.IsNullOrEmpty(_fcmConfig.CredentialsPath))
+        {
+            try
+            {
+                _fcmCredentials = LoadFcmCredentials(_fcmConfig.CredentialsPath);
+                _logger.LogInformation("FCM credentials loaded successfully from {CredentialsPath}", _fcmConfig.CredentialsPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load FCM credentials from {CredentialsPath}", _fcmConfig.CredentialsPath);
+            }
+        }
 
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<RustBridgeDbContext>();
@@ -429,10 +447,34 @@ public class MultiServerRustPlusService
             EventType = eventType,
             Message = message,
             Data = data
-        };
-
-        dbContext.ServerLogs.Add(log);
+        };        dbContext.ServerLogs.Add(log);
         await dbContext.SaveChangesAsync();
+    }
+
+    private object LoadFcmCredentials(string credentialsPath)
+    {
+        try
+        {
+            var fullPath = Path.IsPathRooted(credentialsPath) 
+                ? credentialsPath 
+                : Path.Combine(AppContext.BaseDirectory, credentialsPath);
+
+            if (!File.Exists(fullPath))
+            {
+                throw new FileNotFoundException($"FCM credentials file not found: {fullPath}");
+            }
+
+            var credentialsJson = File.ReadAllText(fullPath);
+            var credentials = JsonSerializer.Deserialize<object>(credentialsJson);
+            
+            _logger.LogDebug("FCM credentials loaded from {FullPath}", fullPath);
+            return credentials ?? throw new InvalidOperationException("Failed to deserialize FCM credentials");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading FCM credentials from {CredentialsPath}", credentialsPath);
+            throw;
+        }
     }
 
     public void Dispose()
