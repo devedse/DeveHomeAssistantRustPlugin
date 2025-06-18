@@ -126,6 +126,88 @@ public class HomeAssistantService
         }
     }
 
+    public async Task SendServerPairingNotification(dynamic pairingInfo)
+    {
+        try
+        {
+            var payload = new
+            {
+                event_type = pairingInfo.event_type,
+                server_name = pairingInfo.server_info?.Name ?? "Unknown",
+                server_ip = pairingInfo.server_info?.Ip ?? "Unknown",
+                server_port = pairingInfo.server_info?.Port ?? 0,
+                player_id = pairingInfo.server_info?.PlayerId ?? 0,
+                timestamp = pairingInfo.timestamp
+            };
+
+            await SendWebhook("rust_server_pairing", payload);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send server pairing notification to Home Assistant");
+        }
+    }
+
+    public async Task SendEntityPairingNotification(dynamic pairingInfo)
+    {
+        try
+        {
+            var payload = new
+            {
+                event_type = pairingInfo.event_type,
+                entity_id = pairingInfo.entity_info?.EntityId ?? 0,
+                entity_type = pairingInfo.entity_info?.EntityType ?? "Unknown",
+                entity_name = pairingInfo.entity_info?.EntityName ?? "Unknown",
+                timestamp = pairingInfo.timestamp
+            };
+
+            await SendWebhook("rust_entity_pairing", payload);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send entity pairing notification to Home Assistant");
+        }
+    }
+
+    public async Task SendAlarmNotification(dynamic alarmInfo)
+    {
+        try
+        {
+            var payload = new
+            {
+                event_type = alarmInfo.event_type,
+                alarm_message = alarmInfo.alarm_info?.Message ?? "Alarm triggered",
+                entity_id = alarmInfo.alarm_info?.EntityId ?? 0,
+                timestamp = alarmInfo.timestamp
+            };
+
+            await SendWebhook("rust_alarm_triggered", payload);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send alarm notification to Home Assistant");
+        }
+    }
+
+    public async Task SendGeneralNotification(dynamic notificationInfo)
+    {
+        try
+        {
+            var payload = new
+            {
+                event_type = notificationInfo.event_type,
+                notification_data = notificationInfo.notification,
+                timestamp = notificationInfo.timestamp
+            };
+
+            await SendWebhook("rust_general_notification", payload);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send general notification to Home Assistant");
+        }
+    }
+
     private async Task SendWebhook(string eventType, object payload)
     {
         try

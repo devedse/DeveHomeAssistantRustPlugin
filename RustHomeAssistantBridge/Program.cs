@@ -1,5 +1,7 @@
 
+using Microsoft.EntityFrameworkCore;
 using RustHomeAssistantBridge.Configuration;
+using RustHomeAssistantBridge.Data;
 using RustHomeAssistantBridge.Services;
 
 namespace RustHomeAssistantBridge
@@ -8,13 +10,16 @@ namespace RustHomeAssistantBridge
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
-
-            // Add services to the container.
+            var builder = WebApplication.CreateBuilder(args);            // Add services to the container.
             builder.Services.AddControllers();
             
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
+
+            // Add Entity Framework
+            builder.Services.AddDbContext<RustBridgeDbContext>(options =>
+                options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") 
+                    ?? "Data Source=rustbridge.db"));
 
             // Configuration
             builder.Services.Configure<RustPlusConfig>(builder.Configuration.GetSection("RustPlus"));
@@ -25,10 +30,17 @@ namespace RustHomeAssistantBridge
 
             // Register services
             builder.Services.AddSingleton<HomeAssistantService>();
-            builder.Services.AddSingleton<RustPlusService>();
-            builder.Services.AddHostedService<RustBridgeHostedService>();
+            builder.Services.AddSingleton<MultiServerRustPlusService>();
+            builder.Services.AddHostedService<MultiServerRustBridgeHostedService>();
 
             var app = builder.Build();
+
+            // Ensure database is created
+            using (var scope = app.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<RustBridgeDbContext>();
+                context.Database.EnsureCreated();
+            }
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
