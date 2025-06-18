@@ -10,16 +10,20 @@ namespace RustHomeAssistantBridge
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);            // Add services to the container.
+            var builder = WebApplication.CreateBuilder(args);
+
+            // Add services to the container.
             builder.Services.AddControllers();
-            
+
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
             // Add Entity Framework
             builder.Services.AddDbContext<RustBridgeDbContext>(options =>
-                options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") 
-                    ?? "Data Source=rustbridge.db"));            // Configuration
+                options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
+                    ?? "Data Source=rustbridge.db"));
+
+            // Configuration
             builder.Services.Configure<HomeAssistantConfig>(builder.Configuration.GetSection("HomeAssistant"));
             builder.Services.Configure<FcmConfig>(builder.Configuration.GetSection("Fcm"));
 

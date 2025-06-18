@@ -38,10 +38,11 @@ public class MultiServerRustPlusService
         _homeAssistantService = homeAssistantService;
         _scopeFactory = scopeFactory;
         _fcmConfig = fcmConfig.Value;
-        
+
         // Timer to periodically check connections and update server info
         _monitoringTimer = new Timer(MonitorConnections, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
-    }    public async Task StartAsync(CancellationToken cancellationToken)
+    }
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Starting Multi-Server Rust+ service...");
 
@@ -75,7 +76,7 @@ public class MultiServerRustPlusService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to connect to server {ServerName} ({ServerAddress}:{Port})", 
+                _logger.LogError(ex, "Failed to connect to server {ServerName} ({ServerAddress}:{Port})",
                     server.Name, server.ServerAddress, server.Port);
                 await LogServerEvent(server.Id, "ConnectionError", ex.Message);
             }
@@ -125,7 +126,7 @@ public class MultiServerRustPlusService
                 await ConnectToServer(server);
             }
 
-            _logger.LogInformation("Added new server {ServerName} ({ServerAddress}:{Port})", 
+            _logger.LogInformation("Added new server {ServerName} ({ServerAddress}:{Port})",
                 server.Name, server.ServerAddress, server.Port);
             return true;
         }
@@ -156,7 +157,7 @@ public class MultiServerRustPlusService
             {
                 dbContext.RustServers.Remove(server);
                 await dbContext.SaveChangesAsync();
-                
+
                 _logger.LogInformation("Removed server {ServerName}", server.Name);
                 return true;
             }
@@ -256,10 +257,10 @@ public class MultiServerRustPlusService
             client.OnTeamChatReceived += async (sender, data) => await OnTeamChatReceived(connection, data);
 
             await client.ConnectAsync();
-            
+
             _connections.TryAdd(server.Id, connection);
-            
-            _logger.LogInformation("Connected to server {ServerName} ({ServerAddress}:{Port})", 
+
+            _logger.LogInformation("Connected to server {ServerName} ({ServerAddress}:{Port})",
                 server.Name, server.ServerAddress, server.Port);
 
             // Start monitoring for this server
@@ -277,10 +278,10 @@ public class MultiServerRustPlusService
     {
         connection.IsConnected = true;
         connection.LastHeartbeat = DateTime.UtcNow;
-        
+
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<RustBridgeDbContext>();
-        
+
         var server = await dbContext.RustServers.FindAsync(connection.ServerInfo.Id);
         if (server != null)
         {
@@ -290,7 +291,7 @@ public class MultiServerRustPlusService
         }
 
         await LogServerEvent(connection.ServerInfo.Id, "Connected", "Server connected successfully");
-        
+
         // Get initial server info
         try
         {
@@ -317,10 +318,10 @@ public class MultiServerRustPlusService
     {
         connection.IsConnected = false;
         await LogServerEvent(connection.ServerInfo.Id, "Error", ex.Message);
-        
+
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<RustBridgeDbContext>();
-        
+
         var server = await dbContext.RustServers.FindAsync(connection.ServerInfo.Id);
         if (server != null)
         {
@@ -383,13 +384,13 @@ public class MultiServerRustPlusService
         foreach (var kvp in _connections)
         {
             var connection = kvp.Value;
-            
+
             // Check if connection is stale
             if (DateTime.UtcNow - connection.LastHeartbeat > TimeSpan.FromMinutes(5))
             {
-                _logger.LogWarning("Connection to server {ServerName} appears stale, attempting reconnect", 
+                _logger.LogWarning("Connection to server {ServerName} appears stale, attempting reconnect",
                     connection.ServerInfo.Name);
-                
+
                 try
                 {
                     await connection.Client.DisconnectAsync();
@@ -423,9 +424,9 @@ public class MultiServerRustPlusService
 
         entity.LastUpdated = DateTime.UtcNow;
         // Update other properties based on entityInfo structure
-        
+
         await dbContext.SaveChangesAsync();
-        
+
         dynamic payload = new
         {
             server_id = serverId,
@@ -447,7 +448,7 @@ public class MultiServerRustPlusService
             EventType = eventType,
             Message = message,
             Data = data
-        };        dbContext.ServerLogs.Add(log);
+        }; dbContext.ServerLogs.Add(log);
         await dbContext.SaveChangesAsync();
     }
 
@@ -455,8 +456,8 @@ public class MultiServerRustPlusService
     {
         try
         {
-            var fullPath = Path.IsPathRooted(credentialsPath) 
-                ? credentialsPath 
+            var fullPath = Path.IsPathRooted(credentialsPath)
+                ? credentialsPath
                 : Path.Combine(AppContext.BaseDirectory, credentialsPath);
 
             if (!File.Exists(fullPath))
@@ -466,7 +467,7 @@ public class MultiServerRustPlusService
 
             var credentialsJson = File.ReadAllText(fullPath);
             var credentials = JsonSerializer.Deserialize<object>(credentialsJson);
-            
+
             _logger.LogDebug("FCM credentials loaded from {FullPath}", fullPath);
             return credentials ?? throw new InvalidOperationException("Failed to deserialize FCM credentials");
         }

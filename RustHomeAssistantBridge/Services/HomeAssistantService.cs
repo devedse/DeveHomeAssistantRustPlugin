@@ -19,7 +19,7 @@ public class HomeAssistantService
         _logger = logger;
         _config = config.Value;
         _httpClient = httpClient;
-        
+
         // Set up HTTP client
         _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_config.AccessToken}");
         _httpClient.DefaultRequestHeaders.Add("Content-Type", "application/json");
@@ -230,7 +230,7 @@ public class HomeAssistantService
             }
             else
             {
-                _logger.LogWarning("Failed to send webhook {EventType} to Home Assistant. Status: {StatusCode}", 
+                _logger.LogWarning("Failed to send webhook {EventType} to Home Assistant. Status: {StatusCode}",
                     eventType, response.StatusCode);
             }
         }

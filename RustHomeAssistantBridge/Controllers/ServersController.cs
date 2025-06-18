@@ -37,7 +37,7 @@ public class ServersController : ControllerBase
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.Name) || 
+            if (string.IsNullOrWhiteSpace(request.Name) ||
                 string.IsNullOrWhiteSpace(request.ServerAddress) ||
                 string.IsNullOrWhiteSpace(request.PlayerToken))
             {

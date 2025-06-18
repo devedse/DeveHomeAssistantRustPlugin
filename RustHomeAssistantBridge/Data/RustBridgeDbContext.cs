@@ -29,7 +29,7 @@ public class RustBridgeDbContext : DbContext
         modelBuilder.Entity<EntityInfo>(entity =>
         {
             entity.HasIndex(e => new { e.ServerId, e.EntityId }).IsUnique();
-            
+
             entity.HasOne(e => e.Server)
                   .WithMany(s => s.Entities)
                   .HasForeignKey(e => e.ServerId)
@@ -41,7 +41,7 @@ public class RustBridgeDbContext : DbContext
         {
             entity.HasIndex(e => e.Timestamp);
             entity.HasIndex(e => e.EventType);
-            
+
             entity.HasOne(l => l.Server)
                   .WithMany(s => s.Logs)
                   .HasForeignKey(l => l.ServerId)
