@@ -1,0 +1,6 @@
+@RustHomeAssistantBridge_HostAddress = http://localhost:5288
+
+GET {{RustHomeAssistantBridge_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
