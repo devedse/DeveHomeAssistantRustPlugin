@@ -50,26 +50,36 @@ public class FcmListenerService : BackgroundService
             _listener = new RustPlusFcmListener(credentials);
 
             // Basic event handlers
+            _listener.Connecting += (_, _) => _logger.LogInformation("[FCM CONNECTING]: Attempting to connect to FCM...");
             _listener.Connected += (_, _) => _logger.LogInformation("[FCM CONNECTED]: {DateTime}", DateTime.Now);
+            _listener.Disconnecting += (_, _) => _logger.LogInformation("[FCM DISCONNECTING]: Disconnecting from FCM...");
             _listener.Disconnected += (_, _) => _logger.LogInformation("[FCM DISCONNECTED]: {DateTime}", DateTime.Now);
             _listener.ErrorOccurred += (_, error) => _logger.LogError("[FCM ERROR]: {Error}", error);
+            _listener.SocketClosed += (_, _) => _logger.LogInformation("[SOCKET CLOSED]: FCM socket closed");
+
+            _listener.OnEntityParing += (_, _) => _logger.LogInformation("[ENTITY PAIRING]: Entity pairing event received");
+            _listener.OnAlarmTriggered += (_, _) => _logger.LogInformation("[ALARM TRIGGERED]: Alarm triggered event received");
+            _listener.OnStorageMonitorParing += (_, _) => _logger.LogInformation("[STORAGE MONITOR PAIRING]: Storage monitor pairing event received");
+            _listener.OnParing += (_, _) => _logger.LogInformation("[PAIRING]: Pairing event received");
 
             // Server pairing event
             _listener.OnServerPairing += async (_, pairing) =>
             {
                 _logger.LogInformation("[SERVER PAIRING]: {Pairing}", JsonSerializer.Serialize(pairing, new JsonSerializerOptions { WriteIndented = true }));
-                
+
                 var pairingInfo = new
                 {
                     event_type = "server_pairing",
                     server_name = pairing.Data?.Name ?? "Unknown",
-                    server_ip = pairing.Data?.Ip ?? "Unknown", 
+                    server_ip = pairing.Data?.Ip ?? "Unknown",
                     server_port = pairing.Data?.Port ?? 0,
                     timestamp = DateTime.UtcNow
                 };
 
                 await _homeAssistantService.SendServerPairingNotification(pairingInfo);
             };
+
+
 
             await _listener.ConnectAsync();
             _logger.LogInformation("FCM listener connected successfully");
@@ -104,6 +114,7 @@ public class FcmListenerService : BackgroundService
                 _logger.LogError("FCM credentials file not found: {FullPath}", fullPath);
                 return null;
             }
+
 
             var json = File.ReadAllText(fullPath);
             var config = JsonSerializer.Deserialize<RustPlusConfig>(json);
