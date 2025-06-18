@@ -1,4 +1,5 @@
 
+using Microsoft.AspNetCore.Rewrite;
 using Microsoft.EntityFrameworkCore;
 using RustHomeAssistantBridge.Configuration;
 using RustHomeAssistantBridge.Data;
@@ -49,6 +50,16 @@ namespace RustHomeAssistantBridge
             {
                 app.MapOpenApi();
             }
+
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/openapi/v1.json", "Rust Home Assistant Bridge API V1");
+            });
+
+            //Redirect to /openapi/v1.json
+            var option = new RewriteOptions();
+            option.AddRedirect("^$", "swagger");
+            app.UseRewriter(option);
 
             app.UseHttpsRedirection();
 

@@ -22,7 +22,7 @@ public class HomeAssistantService
 
         // Set up HTTP client
         _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_config.AccessToken}");
-        _httpClient.DefaultRequestHeaders.Add("Content-Type", "application/json");
+        //_httpClient.DefaultRequestHeaders.Add("Content-Type", "application/json");
     }
 
     public async Task SendServerInfo(dynamic serverInfo)
