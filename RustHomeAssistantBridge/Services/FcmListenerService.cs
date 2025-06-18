@@ -3,6 +3,7 @@ using RustHomeAssistantBridge.Configuration;
 using RustHomeAssistantBridge.Models;
 using RustPlusApi.Fcm;
 using RustPlusApi.Fcm.Data;
+using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace RustHomeAssistantBridge.Services;
@@ -120,15 +121,16 @@ public class FcmListenerService : BackgroundService
             var config = JsonSerializer.Deserialize<RustPlusConfig>(json);
 
             if (config?.FcmCredentials?.Gcm == null)
-                return null;
+                return null;            // Generate FCM keys similar to the JavaScript implementation
+            var keys = CreateKeys();
 
             var retval = new Credentials
             {
                 Keys = new Keys
                 {
-                    PrivateKey = "",
-                    PublicKey = "",
-                    AuthSecret = ""
+                    PrivateKey = keys.PrivateKey,
+                    PublicKey = keys.PublicKey,
+                    AuthSecret = keys.AuthSecret
                 },
                 Gcm = new Gcm
                 {
@@ -144,5 +146,45 @@ public class FcmListenerService : BackgroundService
             _logger.LogError(ex, "Error loading FCM credentials");
             return null;
         }
+    }
+
+    private (string PrivateKey, string PublicKey, string AuthSecret) CreateKeys()
+    {
+        try
+        {
+            // Create ECDH using prime256v1 curve (same as Node.js crypto.createECDH('prime256v1'))
+            using var ecdh = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
+            
+            // Get the public and private keys
+            var privateKeyBytes = ecdh.ExportECPrivateKey();
+            var publicKeyBytes = ecdh.ExportSubjectPublicKeyInfo();
+            
+            // Generate 16 random bytes for auth secret (same as crypto.randomBytes(16))
+            var authSecretBytes = new byte[16];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(authSecretBytes);
+            
+            // Convert to base64 and apply URL-safe encoding (replace chars like in JS)
+            var privateKey = EscapeBase64(Convert.ToBase64String(privateKeyBytes));
+            var publicKey = EscapeBase64(Convert.ToBase64String(publicKeyBytes));
+            var authSecret = EscapeBase64(Convert.ToBase64String(authSecretBytes));
+            
+            return (privateKey, publicKey, authSecret);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating FCM keys");
+            // Return empty keys as fallback
+            return ("", "", "");
+        }
+    }
+    
+    private static string EscapeBase64(string base64)
+    {
+        // Apply the same transformations as the JavaScript code
+        return base64
+            .Replace("=", "")
+            .Replace("+", "-")
+            .Replace("/", "_");
     }
 }
