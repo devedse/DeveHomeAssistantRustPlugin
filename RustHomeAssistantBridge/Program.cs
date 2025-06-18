@@ -35,6 +35,7 @@ namespace RustHomeAssistantBridge
             builder.Services.AddSingleton<HomeAssistantService>();
             builder.Services.AddSingleton<MultiServerRustPlusService>();
             builder.Services.AddHostedService<MultiServerRustBridgeHostedService>();
+            builder.Services.AddHostedService<FcmListenerService>();
 
             var app = builder.Build();
 
