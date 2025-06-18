@@ -6,11 +6,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>ece251d3-165a-4a22-9113-1d121fe19b74</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-  </PropertyGroup>
-
-  <ItemGroup>
+  </PropertyGroup>  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1-Preview.1" />
+    <PackageReference Include="RustPlusApi" Version="1.2.2" />
+    <PackageReference Include="RustPlusApi.Fcm" Version="1.2.2" />
   </ItemGroup>
 
 </Project>
